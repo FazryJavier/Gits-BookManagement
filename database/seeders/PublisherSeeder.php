@@ -14,8 +14,8 @@ class PublisherSeeder extends Seeder
     public function run(): void
     {
         $publishers = [
-            ['name' => 'Shogakukan', 'email' => 'contact@shogakukan.com', 'phone' => '0212345678'],
-            ['name' => 'Shueisha', 'email' => 'contact@shueisha.com', 'phone' => '02123456789'],
+            ['name' => 'Shogakukan', 'address' => 'Tokyo', 'email' => 'contact@shogakukan.com', 'phone' => '0212345678'],
+            ['name' => 'Shueisha', 'address' => 'Osaka', 'email' => 'contact@shueisha.com', 'phone' => '02123456789'],
         ];
 
         foreach ($publishers as $publisher) {

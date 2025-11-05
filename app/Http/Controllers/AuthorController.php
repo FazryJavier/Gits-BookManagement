@@ -3,16 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\Author;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class AuthorController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Author::all());
+        $search = $request->query('search');
+        $sortBy = $request->query('sortBy', 'id');
+        $sortDir = $request->query('sortDir', 'asc');
+        $perPage = $request->query('perPage', 10);
+
+        $query = Author::query();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%$search%");
+            });
+        }
+
+        $allowedSorts = ['id', 'name', 'birth_date'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDir);
+        }
+
+        $authors = $query->paginate($perPage);
+
+        $data = [
+            'meta' => [
+                'current_page' => $authors->currentPage(),
+                'per_page' => $authors->perPage(),
+                'total' => $authors->total(),
+                'last_page' => $authors->lastPage(),
+            ],
+            'data' => $authors->items(),
+        ];
+
+        return $this->success($data, 'Authors retrieved successfully');
     }
 
     /**
@@ -30,14 +63,12 @@ class AuthorController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'bio' => 'nullable|string',
+            'age' => 'nullable|integer',
             'birth_date' => 'nullable|date',
-            'nationality' => 'nullable|string',
         ]);
 
         $author = Author::create($validated);
-
-        return response()->json($author, 201);
+        return $this->success($author, 'Author created successfully', 201);
     }
 
     /**
@@ -45,7 +76,7 @@ class AuthorController extends Controller
      */
     public function show(Author $author)
     {
-        return response()->json($author);
+        return $this->success($author, 'Author retrieved successfully');
     }
 
     /**
@@ -63,14 +94,12 @@ class AuthorController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'bio' => 'nullable|string',
+            'age' => 'nullable|integer',
             'birth_date' => 'nullable|date',
-            'nationality' => 'nullable|string',
         ]);
 
         $author->update($validated);
-
-        return response()->json($author);
+        return $this->success($author, 'Author updated successfully');
     }
 
     /**
@@ -79,6 +108,6 @@ class AuthorController extends Controller
     public function destroy(Author $author)
     {
         $author->delete();
-        return response()->json(['message' => 'Author deleted']);
+        return $this->success(null, 'Author deleted successfully');
     }
 }

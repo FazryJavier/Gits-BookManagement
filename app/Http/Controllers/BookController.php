@@ -3,16 +3,51 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 
 class BookController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Book::with(['author', 'publisher'])->get());
+        $search = $request->query('search');
+        $sortBy = $request->query('sortBy', 'id');
+        $sortDir = $request->query('sortDir', 'asc');
+        $perPage = $request->query('perPage', 10);
+
+        $query = Book::with(['author', 'publisher']);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%$search%")
+                    ->orWhere('isbn', 'like', "%$search%")
+                    ->orWhere('description', 'like', "%$search%");
+            });
+        }
+
+        $allowedSorts = ['id', 'title', 'isbn', 'published_year', 'pages'];
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->orderBy($sortBy, $sortDir);
+        }
+
+        $books = $query->paginate($perPage);
+
+        $data = [
+            'meta' => [
+                'current_page' => $books->currentPage(),
+                'per_page' => $books->perPage(),
+                'total' => $books->total(),
+                'last_page' => $books->lastPage(),
+            ],
+            'data' => $books->items(),
+        ];
+
+        return $this->success($data, 'Books retrieved successfully');
     }
 
     /**
@@ -41,7 +76,7 @@ class BookController extends Controller
 
         $book = Book::create($validated);
 
-        return response()->json($book->load(['author', 'publisher']), 201);
+        return $this->success($book->load(['author', 'publisher']), 'Book created successfully', 201);
     }
 
     /**
@@ -49,7 +84,7 @@ class BookController extends Controller
      */
     public function show(Book $book)
     {
-        return response()->json($book->load(['author', 'publisher']));
+        return $this->success($book->load(['author', 'publisher']), 'Book retrieved successfully');
     }
 
     /**
@@ -78,7 +113,7 @@ class BookController extends Controller
 
         $book->update($validated);
 
-        return response()->json($book->load(['author', 'publisher']));
+        return $this->success($book->load(['author', 'publisher']), 'Book updated successfully');
     }
 
     /**
@@ -87,6 +122,6 @@ class BookController extends Controller
     public function destroy(Book $book)
     {
         $book->delete();
-        return response()->json(['message' => 'Book deleted']);
+        return $this->success(null, 'Book deleted successfully');
     }
 }

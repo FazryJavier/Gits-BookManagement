@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Tymon\JWTAuth\Exceptions\JWTException;
@@ -10,6 +11,8 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
+    use ApiResponse;
+
     public function register(Request $request)
     {
         $validate = $request->validate([
@@ -28,10 +31,10 @@ class AuthController extends Controller
 
         $token = JWTAuth::fromUser($user);
 
-        return response()->json([
+        return $this->success([
             'user' => $user,
             'token' => $token,
-        ], 201);
+        ], 'User registered successfully', 201);
     }
 
     public function login(Request $request)
@@ -40,13 +43,13 @@ class AuthController extends Controller
 
         try {
             if (!$token = JWTAuth::attempt($credentials)) {
-                return response()->json(['error' => 'Invalid credentials'], 401);
+                return $this->error('Invalid credentials', 401);
             }
         } catch (JWTException $e) {
-            return response()->json(['error' => 'Could not create token'], 500);
+            return $this->error('Could not create token', 500);
         }
 
-        return response()->json(['token' => $token]);
+        return $this->success(['token' => $token], 'Login successful');
     }
 
     public function logout(Request $request)
@@ -55,6 +58,6 @@ class AuthController extends Controller
         if ($token) {
             JWTAuth::setToken($token)->invalidate();
         }
-        return response()->json(['message' => 'Successfully logged out']);
+        return $this->success(null, 'Successfully logged out');
     }
 }

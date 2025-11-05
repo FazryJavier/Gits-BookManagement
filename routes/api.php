@@ -16,8 +16,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', [AuthController::class, 'me']);
-
+    
     Route::apiResource('/authors', AuthorController::class);
     Route::apiResource('/publishers', PublisherController::class);
     Route::apiResource('/books', BookController::class);

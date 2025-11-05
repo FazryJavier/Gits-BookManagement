@@ -53,7 +53,7 @@ class AuthController extends Controller
     {
         $token = $request->bearerToken();
         if ($token) {
-            JWTAuth::invalidate($token);
+            JWTAuth::setToken($token)->invalidate();
         }
         return response()->json(['message' => 'Successfully logged out']);
     }
